@@ -1,95 +1,117 @@
-"""
-AGENDA: PROTOTIPO INICIAL
+import json
+import logging
+import os
+import sys
 
-En esta primera fase vamos a implementar una agenda sencilla que nos permita gestionar contactos
-utilizando una lista como estructura principal sobre la que elaborar los métodos pertinentes.
+# ==============================
+# CONFIGURACIÓN DE LOGGING
+# ==============================
 
-Permite:
-- Insertar contactos
-- Buscar contactos
-- Modificar contactos
-- Eliminar contactos
-- Mostrar todos los contactos
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - Módulo: %(module)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    filename="agenda.log",
+    filemode="a"
+)
 
-También se incluye validación de datos, manejo de errores y un menú interactivo.
-"""
+# Handler adicional para mostrar WARNING+ en consola
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.WARNING)
+console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+logging.getLogger().addHandler(console_handler)
 
-agenda = []
+# ==============================
+# CONSTANTES
+# ==============================
 
+FICHERO_JSON = "agenda.json"
+
+# ==============================
+# FUNCIONES DE FICHEROS JSON
+# ==============================
+
+def cargar_datos():
+    """
+    Carga los contactos desde un fichero JSON.
+    Si el fichero no existe, devuelve una lista vacía.
+    """
+    if not os.path.exists(FICHERO_JSON):
+        logging.warning("El fichero agenda.json no existe. Se creará uno nuevo.")
+        return []
+
+    try:
+        with open(FICHERO_JSON, "r", encoding="utf-8") as fichero:
+            datos = json.load(fichero)
+            logging.info("Datos cargados correctamente desde JSON.")
+            return datos
+    except Exception as e:
+        logging.error("Error al cargar el fichero JSON.", exc_info=True)
+        return []
+
+
+def guardar_datos(datos):
+    """
+    Guarda la lista de contactos en un fichero JSON.
+    """
+    try:
+        with open(FICHERO_JSON, "w", encoding="utf-8") as fichero:
+            json.dump(datos, fichero, indent=4, ensure_ascii=False)
+            logging.info("Datos guardados correctamente en JSON.")
+    except Exception as e:
+        logging.critical("Error crítico al guardar datos en JSON.", exc_info=True)
+
+# ==============================
+# FUNCIONES PRINCIPALES
+# ==============================
 
 def insertar_elemento(datos):
     """
     Inserta un nuevo contacto en la agenda.
-
-    Solicita al usuario el nombre y el teléfono del contacto.
-    Valida que el nombre no esté vacío y que el teléfono sea numérico.
-
-    Parámetros:
-    datos (list): Lista que almacena los contactos.
-
-    Retorna:
-    None
     """
     print("\n--- Añadir contacto ---")
-
     nombre = input("Ingrese nombre: ").strip()
 
     if nombre == "":
+        logging.warning("Intento de insertar contacto con nombre vacío.")
         print("El nombre no puede estar vacío.")
         return
 
     try:
         telefono = int(input("Ingrese teléfono (solo números): "))
     except ValueError:
+        logging.error("Teléfono inválido al insertar contacto.")
         print("El teléfono debe ser numérico.")
         return
 
-    contacto = {
-        "nombre": nombre,
-        "telefono": telefono
-    }
-
+    contacto = {"nombre": nombre, "telefono": telefono}
     datos.append(contacto)
+    guardar_datos(datos)
+
+    logging.info(f"Contacto añadido: {nombre}")
     print("Contacto agregado correctamente.")
 
 
 def buscar_elemento(datos):
     """
-    Busca un contacto en la agenda por nombre.
-
-    Solicita al usuario el nombre del contacto y lo busca
-    dentro de la estructura de datos.
-
-    Parámetros:
-    datos (list): Lista que contiene los contactos.
-
-    Retorna:
-    None
+    Busca un contacto por nombre.
     """
     print("\n--- Buscar contacto ---")
     nombre = input("Ingrese el nombre a buscar: ").strip()
 
     for contacto in datos:
         if contacto["nombre"].lower() == nombre.lower():
-            print("Contacto encontrado:")
+            logging.info(f"Contacto encontrado: {nombre}")
             print(contacto)
             return
 
+    logging.warning(f"Contacto no encontrado: {nombre}")
     print("Contacto no encontrado.")
 
 
 def modificar_elemento(datos):
     """
-    Modifica un contacto existente en la agenda.
-
-    Solicita el nombre del contacto y permite cambiar su teléfono.
-    Incluye manejo de errores para evitar datos inválidos.
-
-    Parámetros:
-    datos (list): Lista que contiene los contactos.
-
-    Retorna:
-    None
+    Modifica el teléfono de un contacto existente.
     """
     print("\n--- Modificar contacto ---")
     nombre = input("Ingrese el nombre del contacto a modificar: ").strip()
@@ -99,26 +121,21 @@ def modificar_elemento(datos):
             try:
                 nuevo_telefono = int(input("Ingrese nuevo teléfono: "))
                 contacto["telefono"] = nuevo_telefono
+                guardar_datos(datos)
+                logging.info(f"Contacto modificado: {nombre}")
                 print("Contacto modificado correctamente.")
             except ValueError:
+                logging.error("Error al modificar teléfono.", exc_info=True)
                 print("Teléfono inválido.")
             return
 
+    logging.warning(f"Intento de modificar contacto inexistente: {nombre}")
     print("Contacto no encontrado.")
 
 
 def eliminar_elemento(datos):
     """
     Elimina un contacto de la agenda.
-
-    Solicita el nombre del contacto y lo elimina si existe
-    en la lista de contactos.
-
-    Parámetros:
-    datos (list): Lista que contiene los contactos.
-
-    Retorna:
-    None
     """
     print("\n--- Eliminar contacto ---")
     nombre = input("Ingrese el nombre del contacto a eliminar: ").strip()
@@ -126,44 +143,38 @@ def eliminar_elemento(datos):
     for contacto in datos:
         if contacto["nombre"].lower() == nombre.lower():
             datos.remove(contacto)
+            guardar_datos(datos)
+            logging.info(f"Contacto eliminado: {nombre}")
             print("Contacto eliminado.")
             return
 
+    logging.warning(f"Intento de eliminar contacto inexistente: {nombre}")
     print("Contacto no encontrado.")
 
 
 def mostrar_todos(datos):
     """
-    Muestra todos los contactos almacenados en la agenda.
-
-    Imprime cada contacto de forma clara y ordenada.
-
-    Parámetros:
-    datos (list): Lista que contiene los contactos.
-
-    Retorna:
-    None
+    Muestra todos los contactos de la agenda.
     """
     print("\n--- Lista de contactos ---")
 
-    if len(datos) == 0:
+    if not datos:
         print("Agenda vacía.")
         return
 
     for i, contacto in enumerate(datos, start=1):
         print(f"{i}. Nombre: {contacto['nombre']} | Teléfono: {contacto['telefono']}")
 
+# ==============================
+# MENÚ PRINCIPAL
+# ==============================
 
 def menu():
     """
-    Muestra el menú principal de la agenda.
-
-    Permite al usuario seleccionar opciones para gestionar contactos.
-    El menú se repite hasta que el usuario selecciona la opción salir.
-
-    Retorna:
-    None
+    Menú interactivo de la agenda.
     """
+    datos = cargar_datos()
+
     while True:
         print("\n===== AGENDA =====")
         print("1. Añadir contacto")
@@ -176,24 +187,30 @@ def menu():
         try:
             opcion = int(input("Seleccione una opción: "))
         except ValueError:
-            print("Error: recuerde que debe ingresar un número.")
+            logging.error("Opción de menú no numérica.")
+            print("Debe ingresar un número.")
             continue
 
         if opcion == 1:
-            insertar_elemento(agenda)
+            insertar_elemento(datos)
         elif opcion == 2:
-            buscar_elemento(agenda)
+            buscar_elemento(datos)
         elif opcion == 3:
-            modificar_elemento(agenda)
+            modificar_elemento(datos)
         elif opcion == 4:
-            eliminar_elemento(agenda)
+            eliminar_elemento(datos)
         elif opcion == 5:
-            mostrar_todos(agenda)
+            mostrar_todos(datos)
         elif opcion == 6:
+            logging.info("Aplicación cerrada por el usuario.")
             print("Saliendo del programa...")
             break
         else:
+            logging.warning("Opción de menú fuera de rango.")
             print("Opción inválida.")
 
+# ==============================
+# EJECUCIÓN
+# ==============================
 
 menu()
