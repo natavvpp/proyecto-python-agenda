@@ -24,8 +24,8 @@ logging.getLogger().addHandler(console_handler)
 # ==============================
 # CONSTANTES
 # ==============================
+FICHERO_JSON = os.path.join(os.path.dirname(__file__), "agenda.json")
 
-FICHERO_JSON = "agenda.json"
 
 # ==============================
 # FUNCIONES DE FICHEROS JSON
