@@ -3,6 +3,8 @@ import os
 import logging
 import sys
 
+## EJERCICIOS RESUELTOS EN EL EXAMEN: EJ.1(LÍNEA 31) Y EJ.3(LÍNEA 261)
+
 # =========================
 # CONFIGURACIÓN DE LOGGING
 # =========================
@@ -19,6 +21,7 @@ console_handler.setLevel(logging.WARNING)
 console_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
 logging.getLogger().addHandler(console_handler)
 
+
 # =========================
 # Clase Contacto
 # =========================
@@ -32,19 +35,20 @@ class Contacto:
         email_mostrar = self.email if self.email else "No definido"  # Campo opcional
         return f"Nombre: {self.nombre} | Teléfono: {self.telefono} | Email: {email_mostrar}"
 
-# =========================
-# Subclase ContactoConDireccion
-# =========================
-class ContactoConDireccion(Contacto):
-    def __init__(self, nombre, telefono, email="", direccion=""):
-        # Constructor con atributo propio y atributos heredados de la clase padre Contacto.
+
+# EXAMEN - Ejercicio 1 - Subclase ContactoProfesion -> Hereda de la clase Contacto
+class ContactoConProfesion(Contacto):
+    def __init__(self, nombre, telefono, email="", direccion="", profesion=""):
         super().__init__(nombre, telefono, email)
-        self.direccion = direccion
+        self.profesion = profesion
 
     def __str__(self):
         email_mostrar = self.email if self.email else "No definido"
-        direccion_mostrar = self.direccion if self.direccion else "No definida"
-        return f"{self.nombre} | {self.telefono} | {email_mostrar} | Dirección: {direccion_mostrar}"
+        profesion_mostrar = self.profesion if self.profesion else "No definida"
+        return f"{self.nombre} | {self.telefono} | {email_mostrar} | Profesion: {profesion_mostrar}"
+
+
+
 
 # =========================
 # Clase Agenda
@@ -69,8 +73,8 @@ class Agenda:
                     nombre = c.get("nombre", "")
                     telefono = c.get("telefono", 0)
                     email = c.get("email", "")
-                    direccion = c.get("direccion", "")
-                    contactos.append(ContactoConDireccion(nombre, telefono, email, direccion))
+                    profesion = c.get("profesion", "")
+                    contactos.append(ContactoConProfesion(nombre, telefono, email, profesion))
                 logging.info("Datos cargados correctamente desde JSON.")
                 return contactos
         except Exception as e:
@@ -82,7 +86,8 @@ class Agenda:
         try:
             with open(self.FICHERO_JSON, "w", encoding="utf-8") as f:
                 json.dump(
-                    [{"nombre": c.nombre, "telefono": c.telefono, "email": c.email, "direccion": getattr(c, "direccion", "")}
+                    [{"nombre": c.nombre, "telefono": c.telefono, "email": c.email,
+                      "profesion": getattr(c, "profesion", "")}
                      for c in self.contactos],
                     f,
                     indent=4,
@@ -128,18 +133,18 @@ class Agenda:
             print("Se recomienda añadir un email.")
             email = ""
 
-        direccion = input("Ingrese dirección: ").strip()
-        if not direccion:
-            direccion = ""
+        profesion = input("Ingrese profesión del contacto a agendar: ").strip()
+        if not profesion:
+            profesion = ""
 
-        self.contactos.append(ContactoConDireccion(nombre, telefono, email, direccion))
+        self.contactos.append(ContactoConProfesion(nombre, telefono, email, profesion))
         self.guardar_datos()
         logging.info(f"Contacto añadido: {nombre}")
         print("Contacto agregado correctamente.")
 
         """
             Sin herencia: 
-            
+
             self.contactos.append(Contacto(nombre, telefono, email))
             self.guardar_datos()
             logging.info(f"Contacto añadido: {nombre}")
@@ -196,7 +201,7 @@ class Agenda:
         logging.warning(f"Email no encontrado: {email}")
         print("Email no encontrado.")
 
-    # Modificar contacto (teléfono, email y dirección)
+    # Modificar contacto (teléfono, email y profesion
     def modificar(self):
         print("\n--- Modificar contacto ---")
         nombre = input("Ingrese nombre del contacto a modificar: ").strip()
@@ -211,9 +216,9 @@ class Agenda:
                 nuevo_email = input("Ingrese nuevo email: ").strip()
                 if nuevo_email:
                     c.email = nuevo_email
-                nueva_direccion = input("Ingrese nueva dirección: ").strip()
-                if nueva_direccion:
-                    c.direccion = nueva_direccion
+                nueva_profesion = input("Ingrese nueva profesion: ").strip()
+                if nueva_profesion:
+                    c.profesion = nueva_profesion
                 self.guardar_datos()
                 logging.info(f"Contacto modificado: {nombre}")
                 print("Contacto modificado correctamente.")
@@ -253,21 +258,38 @@ class Agenda:
         logging.info("Agenda eliminada completamente.")
         print("Agenda eliminada correctamente.")
 
-    # Ordenar contactos
-    def ordenar_por_nombre(self):
-        # Por tlf se repite operación, el lower no es necesario al ser numérico
-        # Si quisiese hacerlo a la inversa: ,reverse = True como un parámetro más.
+    # EXAMEN - Ejercicio 3 - Metodo ordenacion y resumen
+    def ordenacion_resumen(self):
+        # Ordenamos contactos por nombre
         self.contactos.sort(key=lambda c: c.nombre.lower())
         self.guardar_datos()
         logging.info("Contactos ordenados por nombre A-Z.")
         print("Contactos ordenados por nombre (A–Z).")
+
+        # Mostramos los elementos (contactos) ordenados alfabéticamente(A-Z)
+        self.mostrar_todos()
+
+        # Mostramos el total de elementos contenidos por el objeto de tipo Agenda
+        print("")
+        total = len(self.contactos)
+        print(f"Existen {total} contactos en la agenda.")
+
+        # Creamos y mostramos un elemento calculado (¿Cuántos contactos no tienen email agregado?)
+        print("")
+        contactosSinEmail = 0;
+        for c in self.contactos:
+            if c.email.lower() == "":
+                contactosSinEmail += 1
+
+        print(f"Existen {contactosSinEmail} contactos sin email agregado en la agenda")
+
 
 
 
 # =========================
 # Menú principal
 # =========================
-def menu():
+def menuExamen():
     agenda = Agenda()
 
     while True:
@@ -279,10 +301,8 @@ def menu():
         print("5. Modificar contacto")
         print("6. Eliminar contacto")
         print("7. Mostrar todos")
-        print("8. Contar contactos")
-        print("9. Ordenar contactos por nombre")
-        print("10. Eliminar agenda")
-        print("11. Salir")
+        print("8. Mostrar reporte (método EXAMEN)")
+        print("9. Salir")
 
         try:
             opcion = int(input("Seleccione una opción: "))
@@ -306,12 +326,8 @@ def menu():
         elif opcion == 7:
             agenda.mostrar_todos()
         elif opcion == 8:
-            agenda.contar()
+            agenda.ordenacion_resumen()
         elif opcion == 9:
-            agenda.eliminar_agenda()
-        elif opcion == 10:
-            agenda.ordenar_por_nombre()
-        elif opcion == 11:
             logging.info("Aplicación cerrada por el usuario.")
             print("Saliendo del programa...")
             break
@@ -319,8 +335,9 @@ def menu():
             logging.warning("Opción de menú fuera de rango.")
             print("Opción inválida.")
 
+
 # =========================
 # Ejecución
 # =========================
 if __name__ == "__main__":
-    menu()
+    menuExamen()
