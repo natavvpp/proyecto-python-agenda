@@ -29,8 +29,21 @@ class Contacto:
         self.email = email
 
     def __str__(self):
-        email_mostrar = self.email if self.email else "No definido" # Trabajamos con un campo opcional
+        email_mostrar = self.email if self.email else "No definido"  # Campo opcional
         return f"Nombre: {self.nombre} | Teléfono: {self.telefono} | Email: {email_mostrar}"
+
+# =========================
+# Subclase ContactoConDireccion
+# =========================
+class ContactoConDireccion(Contacto):
+    def __init__(self, nombre, telefono, email="", direccion=""):
+        super().__init__(nombre, telefono, email)
+        self.direccion = direccion
+
+    def __str__(self):
+        email_mostrar = self.email if self.email else "No definido"
+        direccion_mostrar = self.direccion if self.direccion else "No definida"
+        return f"{self.nombre} | {self.telefono} | {email_mostrar} | Dirección: {direccion_mostrar}"
 
 # =========================
 # Clase Agenda
@@ -38,8 +51,6 @@ class Contacto:
 class Agenda:
     FICHERO_JSON = os.path.join(os.path.dirname(__file__), "agenda_poo.json")
 
-    #No se pasan los contactos al constructor porque la clase Agenda se encarga de cargarlos desde el fichero JSON.
-    # Así se mantiene la encapsulación y la agenda se inicializa automáticamente con sus datos.
     def __init__(self):
         self.contactos = self.cargar_datos()
 
@@ -57,7 +68,8 @@ class Agenda:
                     nombre = c.get("nombre", "")
                     telefono = c.get("telefono", 0)
                     email = c.get("email", "")
-                    contactos.append(Contacto(nombre, telefono, email))
+                    direccion = c.get("direccion", "")
+                    contactos.append(ContactoConDireccion(nombre, telefono, email, direccion))
                 logging.info("Datos cargados correctamente desde JSON.")
                 return contactos
         except Exception as e:
@@ -69,7 +81,8 @@ class Agenda:
         try:
             with open(self.FICHERO_JSON, "w", encoding="utf-8") as f:
                 json.dump(
-                    [{"nombre": c.nombre, "telefono": c.telefono, "email": c.email} for c in self.contactos],
+                    [{"nombre": c.nombre, "telefono": c.telefono, "email": c.email, "direccion": getattr(c, "direccion", "")}
+                     for c in self.contactos],
                     f,
                     indent=4,
                     ensure_ascii=False
@@ -96,7 +109,6 @@ class Agenda:
 
         try:
             telefono = int(input("Ingrese teléfono: "))
-
         except ValueError:
             logging.error("Teléfono inválido al insertar contacto.")
             print("Teléfono inválido.")
@@ -115,7 +127,11 @@ class Agenda:
             print("Se recomienda añadir un email.")
             email = ""
 
-        self.contactos.append(Contacto(nombre, telefono, email))
+        direccion = input("Ingrese dirección: ").strip()
+        if not direccion:
+            direccion = ""
+
+        self.contactos.append(ContactoConDireccion(nombre, telefono, email, direccion))
         self.guardar_datos()
         logging.info(f"Contacto añadido: {nombre}")
         print("Contacto agregado correctamente.")
@@ -170,7 +186,7 @@ class Agenda:
         logging.warning(f"Email no encontrado: {email}")
         print("Email no encontrado.")
 
-    # Modificar contacto (teléfono y email)
+    # Modificar contacto (teléfono, email y dirección)
     def modificar(self):
         print("\n--- Modificar contacto ---")
         nombre = input("Ingrese nombre del contacto a modificar: ").strip()
@@ -185,13 +201,12 @@ class Agenda:
                 nuevo_email = input("Ingrese nuevo email: ").strip()
                 if nuevo_email:
                     c.email = nuevo_email
-                try:
-                    self.guardar_datos()
-                    logging.info(f"Contacto modificado: {nombre}")
-                    print("Contacto modificado correctamente.")
-                except Exception as e:
-                    logging.error("Error guardando contacto modificado.", exc_info=True)
-                    print("Error guardando contacto.")
+                nueva_direccion = input("Ingrese nueva dirección: ").strip()
+                if nueva_direccion:
+                    c.direccion = nueva_direccion
+                self.guardar_datos()
+                logging.info(f"Contacto modificado: {nombre}")
+                print("Contacto modificado correctamente.")
                 return
         logging.warning(f"Intento de modificar contacto inexistente: {nombre}")
         print("Contacto no encontrado.")
@@ -203,13 +218,9 @@ class Agenda:
         for c in self.contactos:
             if c.nombre.lower() == nombre.lower():
                 self.contactos.remove(c)
-                try:
-                    self.guardar_datos()
-                    logging.info(f"Contacto eliminado: {nombre}")
-                    print("Contacto eliminado correctamente.")
-                except Exception as e:
-                    logging.error("Error eliminando contacto.", exc_info=True)
-                    print("Error eliminando contacto.")
+                self.guardar_datos()
+                logging.info(f"Contacto eliminado: {nombre}")
+                print("Contacto eliminado correctamente.")
                 return
         logging.warning(f"Intento de eliminar contacto inexistente: {nombre}")
         print("Contacto no encontrado.")
