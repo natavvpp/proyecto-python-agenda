@@ -37,6 +37,7 @@ class Contacto:
 # =========================
 class ContactoConDireccion(Contacto):
     def __init__(self, nombre, telefono, email="", direccion=""):
+        # Constructor con atributo propio y atributos heredados de la clase padre Contacto.
         super().__init__(nombre, telefono, email)
         self.direccion = direccion
 
@@ -136,6 +137,15 @@ class Agenda:
         logging.info(f"Contacto añadido: {nombre}")
         print("Contacto agregado correctamente.")
 
+        """
+            Sin herencia: 
+            
+            self.contactos.append(Contacto(nombre, telefono, email))
+            self.guardar_datos()
+            logging.info(f"Contacto añadido: {nombre}")
+            print("Contacto agregado correctamente.") 
+        """
+
     # Mostrar todos los contactos
     def mostrar_todos(self):
         print("\n--- Lista de contactos ---")
@@ -230,6 +240,30 @@ class Agenda:
         total = len(self.contactos)
         print(f"Existen {total} contactos en la agenda.")
 
+    # Eliminar agenda
+    def eliminar_agenda(self):
+        confirmacion = input("¿Seguro que quieres eliminar toda la agenda? (s/n): ").lower()
+
+        if confirmacion != "s":
+            print("Operación cancelada.")
+            return
+
+        self.contactos.clear()
+        self.guardar_datos()
+        logging.info("Agenda eliminada completamente.")
+        print("Agenda eliminada correctamente.")
+
+    # Ordenar contactos
+    def ordenar_por_nombre(self):
+        # Por tlf se repite operación, el lower no es necesario al ser numérico
+        # Si quisiese hacerlo a la inversa: ,reverse = True como un parámetro más.
+        self.contactos.sort(key=lambda c: c.nombre.lower())
+        self.guardar_datos()
+        logging.info("Contactos ordenados por nombre A-Z.")
+        print("Contactos ordenados por nombre (A–Z).")
+
+
+
 # =========================
 # Menú principal
 # =========================
@@ -246,7 +280,9 @@ def menu():
         print("6. Eliminar contacto")
         print("7. Mostrar todos")
         print("8. Contar contactos")
-        print("9. Salir")
+        print("9. Ordenar contactos por nombre")
+        print("10. Eliminar agenda")
+        print("11. Salir")
 
         try:
             opcion = int(input("Seleccione una opción: "))
@@ -272,6 +308,10 @@ def menu():
         elif opcion == 8:
             agenda.contar()
         elif opcion == 9:
+            agenda.eliminar_agenda()
+        elif opcion == 10:
+            agenda.ordenar_por_nombre()
+        elif opcion == 11:
             logging.info("Aplicación cerrada por el usuario.")
             print("Saliendo del programa...")
             break
